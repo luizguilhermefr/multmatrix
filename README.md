@@ -2,7 +2,7 @@
 
 Multiplicação de matrizes utilizando transposição para melhor aproveitamento da memória cache.
 
-Uso: `./multmatrix l c o|t`
+Uso: `./multmatrix l c o|t [--verbose]`
 
 Onde:
 
@@ -11,6 +11,8 @@ Onde:
 **c**: número de colunas
 
 **o|t**: matriz M2 original (o) ou transposta (t)
+
+**--verbose**: escrever matrizes durante o processo (desativado por padrão)
 
 As matrizes multiplicadas serão geradas de maneira aleatória conforme os tamanhos especificados.
 

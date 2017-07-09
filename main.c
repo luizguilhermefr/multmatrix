@@ -42,6 +42,8 @@ void transpoe_matriz (double **M, int l, int c);
 
 void multiplica_matrizes (double **M1, double **M2, int l, int c, bool otimizar);
 
+void print_matriz (double **M1, int l, int c, char *msg);
+
 /**
  * Ponto de entrada da aplicação. Uso esperado:
  * ./multmatrix l c o|t
@@ -49,14 +51,16 @@ void multiplica_matrizes (double **M1, double **M2, int l, int c, bool otimizar)
  * l => número de linhas
  * c => número de colunas
  * o|t => o = matriz M2 original, t = matriz M2 transposta
+ * --verbose => escrever matrizes na tela (padrao: desativado)
  * @param int argc Número de argumentos + 1
  * @param char** argv Nome do programa + argumentos
  */
 int main (int argc, char **argv) {
     int linhas, colunas;
-    bool otimizar;
+    bool otimizar, verbose = FALSE;
+    double **M1, **M2, **M1t, **M2t, **Mf;
 
-    if (argc != 4) {
+    if (argc < 4) {
         return print_argumentos_invalidos();
     }
 
@@ -75,18 +79,48 @@ int main (int argc, char **argv) {
         return print_argumentos_invalidos();
     }
 
-    multiplica_matrizes(gera_matriz(linhas, colunas), gera_matriz(linhas, colunas), linhas, colunas, otimizar);
+    if (argc > 4) {
+        if (strcmp(argv[4], "--verbose") == 0) {
+            verbose = TRUE;
+        }
+    }
+
+    M1 = gera_matriz(linhas, colunas);
+    if (verbose) print_matriz(M1, linhas, colunas, "M1:");
+    M2 = gera_matriz(linhas, colunas);
+    if (verbose) print_matriz(M2, linhas, colunas, "M2:");
+
+    multiplica_matrizes(M1, M2, linhas, colunas, otimizar);
 
     return 0;
 }
 
 /**
  * Escreve o erro de argumentos inválidos.
- * @return Codigo de erro
+ * @return codigo de erro
  */
 int print_argumentos_invalidos () {
-    printf("Argumentos inválidos.\nUso: ./multmatrix l c o|t\nOnde:\nl: número de linhas\nc: número de colunas\no|t: matriz M2 original (o) ou transposta (t)\n");
+    printf("Argumentos inválidos.\nUso: ./multmatrix l c o|t [--verbose]\nOnde:\nl: número de linhas\nc: número de colunas\no|t: matriz M2 original (o) ou transposta (t)\n--verbose: escrever matrizes durante o processo (desativado por padrão)\n");
     return 1;
+}
+
+/**
+ * Escreve uma mensagem, acrescida da matriz na tela.
+ * @param M matriz de entrada
+ * @param l quantia de linhas
+ * @param c quantia de colunas
+ * @param msg mensagem
+ */
+void print_matriz (double **M, int l, int c, char* msg) {
+    int i, j;
+    printf("%s\n", msg);
+    for (i = 0; i < l; i++){
+        for (j=0; j < c; j++) {
+            printf("%.2lf\t", M[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
 }
 
 /**
@@ -145,5 +179,4 @@ void multiplica_matrizes (double **M1, double **M2, int l, int c, bool otimizar)
     if (otimizar) {
         transpoe_matriz(M2, l, c);
     }
-
 }
