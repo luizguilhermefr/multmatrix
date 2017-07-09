@@ -40,7 +40,7 @@ double **gera_matriz (int l, int c);
 
 void transpoe_matriz (double **M, int l, int c);
 
-void multiplica_matrizes (double **M1, double **M2, int l, int c, bool otimizar);
+double **multiplica_matrizes (double **M1, double **M2, int l, int c, bool otimizar);
 
 void print_matriz (double **M1, int l, int c, char *msg);
 
@@ -58,7 +58,7 @@ void print_matriz (double **M1, int l, int c, char *msg);
 int main (int argc, char **argv) {
     int linhas, colunas;
     bool otimizar, verbose = FALSE;
-    double **M1, **M2, **M1t, **M2t, **Mf;
+    double **M1, **M2, **Mf;
 
     if (argc < 4) {
         return print_argumentos_invalidos();
@@ -90,7 +90,8 @@ int main (int argc, char **argv) {
     M2 = gera_matriz(linhas, colunas);
     if (verbose) print_matriz(M2, linhas, colunas, "M2:");
 
-    multiplica_matrizes(M1, M2, linhas, colunas, otimizar);
+    Mf = multiplica_matrizes(M1, M2, linhas, colunas, otimizar);
+    if (verbose) print_matriz(Mf, linhas, colunas, "Mf: ");
 
     return 0;
 }
@@ -111,11 +112,11 @@ int print_argumentos_invalidos () {
  * @param c quantia de colunas
  * @param msg mensagem
  */
-void print_matriz (double **M, int l, int c, char* msg) {
+void print_matriz (double **M, int l, int c, char *msg) {
     int i, j;
     printf("%s\n", msg);
-    for (i = 0; i < l; i++){
-        for (j=0; j < c; j++) {
+    for (i = 0; i < l; i++) {
+        for (j = 0; j < c; j++) {
             printf("%.2lf\t", M[i][j]);
         }
         printf("\n");
@@ -173,10 +174,30 @@ void transpoe_matriz (double **M, int l, int c) {
  * @param l quantidade de linhas
  * @param c quantidade de colunas
  * @param otimizar otimizar a multiplicaçao por meio de transposiçao
+ * @return matriz resultado
  */
-void multiplica_matrizes (double **M1, double **M2, int l, int c, bool otimizar)
-{
+double **multiplica_matrizes (double **M1, double **M2, int l, int c, bool otimizar) {
+    int i, j, k;
+    double temp = 0, **Mf;
+
+    Mf = (double **) calloc(l, sizeof(double *));
+    for (i = 0; i < l; i++) {
+        Mf[i] = (double *) calloc(c, sizeof(double));
+    }
+
     if (otimizar) {
         transpoe_matriz(M2, l, c);
     }
+
+    for (i = 0; i < l; i++) {
+        for (j = 0; j < c; j++) {
+            temp = 0;
+            for (k = 0; k < l; k++) {
+                temp += M1[i][k] * M2[j][k];
+            }
+            Mf[i][j] = temp;
+        }
+    }
+
+    return Mf;
 }
