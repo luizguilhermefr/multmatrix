@@ -29,6 +29,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <locale.h>
+#include <time.h>
 
 #define TRUE 1
 #define FALSE 0
@@ -60,6 +61,8 @@ int main (int argc, char **argv) {
     int lm1, cm1;
     bool otimizar, verbose = FALSE;
     double **M1, **M2, **Mf;
+    float tempo_global = 0.0, tempo_mult = 0.0;
+    clock_t t_global_inicio, t_global_fim, t_mult_inicio, t_mult_fim;
 
     setlocale(LC_NUMERIC, "pt_BR.utf8");
 
@@ -88,6 +91,8 @@ int main (int argc, char **argv) {
         }
     }
 
+    t_global_inicio = clock();
+
     M1 = gera_matriz(lm1, cm1);
     if (verbose) print_matriz(M1, lm1, cm1, "M1:");
     M2 = gera_matriz(cm1, lm1);
@@ -98,8 +103,17 @@ int main (int argc, char **argv) {
         if (verbose) print_matriz(M2, lm1, cm1, "M2t:");
     }
 
+    t_mult_inicio = clock();
     Mf = multiplica_matrizes(M1, M2, lm1, cm1, otimizar);
+    t_mult_fim = clock();
+
     if (verbose) print_matriz(Mf, lm1, lm1, "Mf: ");
+
+    t_global_fim = clock();
+
+    printf("Tempo total (desde a a alocação da primeira matriz):\n\t%f\tsegundos\nTempo da multiplicação:\n\t%f\tsegundos\n",
+           (float) (((t_global_fim - t_global_inicio) + 0.0) / CLOCKS_PER_SEC),
+           (float) (((t_mult_fim - t_mult_inicio) + 0.0) / CLOCKS_PER_SEC));
 
     return 0;
 }
