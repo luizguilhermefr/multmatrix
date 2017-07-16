@@ -39,25 +39,25 @@ int print_argumentos_invalidos ();
 
 double **gera_matriz (int l, int c);
 
-double ** transpoe_matriz (double **M, int l, int c);
+double **transpoe_matriz (double **M, int l, int c);
 
-double **multiplica_matrizes (double **M1, double **M2, int l, int c, bool otimizar);
+double **multiplica_matrizes (double **M1, double **M2, int lm1cm2, int cm1lm2, bool otimizar);
 
-void print_matriz (double **M1, int l, int c, char *msg);
+void print_matriz (double **M, int l, int c, char *msg);
 
 /**
  * Ponto de entrada da aplicação. Uso esperado:
  * ./multmatrix l c o|t
  * Onde:
- * l => número de linhas
- * c => número de colunas
+ * l => número de linhas da matriz M1 (automaticamente colunas da matriz M2)
+ * c => número de colunas da matriz M1 (automaticamente linhas da matriz M2)
  * o|t => o = matriz M2 original, t = matriz M2 transposta
  * --verbose => escrever matrizes na tela (padrao: desativado)
  * @param int argc Número de argumentos + 1
  * @param char** argv Nome do programa + argumentos
  */
 int main (int argc, char **argv) {
-    int linhas, colunas;
+    int lm1, cm1;
     bool otimizar, verbose = FALSE;
     double **M1, **M2, **Mf;
 
@@ -67,10 +67,10 @@ int main (int argc, char **argv) {
         return print_argumentos_invalidos();
     }
 
-    linhas = atoi(argv[1]);
-    colunas = atoi(argv[2]);
+    lm1 = atoi(argv[1]);
+    cm1 = atoi(argv[2]);
 
-    if ((linhas == 0) || (colunas == 0)) {
+    if ((lm1 == 0) || (cm1 == 0)) {
         return print_argumentos_invalidos();
     }
 
@@ -88,15 +88,18 @@ int main (int argc, char **argv) {
         }
     }
 
-    M1 = gera_matriz(linhas, colunas);
-    if (verbose) print_matriz(M1, linhas, colunas, "M1:");
-    M2 = gera_matriz(linhas, colunas);
-    if (verbose) print_matriz(M2, linhas, colunas, "M2:");
-    if (otimizar) M2 = transpoe_matriz(M2, linhas, colunas);
-    if (verbose) print_matriz(M2, linhas, colunas, "M2t:");
+    M1 = gera_matriz(lm1, cm1);
+    if (verbose) print_matriz(M1, lm1, cm1, "M1:");
+    M2 = gera_matriz(cm1, lm1);
+    if (verbose) print_matriz(M2, cm1, lm1, "M2:");
 
-    Mf = multiplica_matrizes(M1, M2, linhas, colunas, otimizar);
-    if (verbose) print_matriz(Mf, linhas, colunas, "Mf: ");
+    if (otimizar) {
+        M2 = transpoe_matriz(M2, cm1, lm1);
+        if (verbose) print_matriz(M2, lm1, cm1, "M2t:");
+    }
+
+    Mf = multiplica_matrizes(M1, M2, lm1, cm1, otimizar);
+    if (verbose) print_matriz(Mf, lm1, lm1, "Mf: ");
 
     return 0;
 }
@@ -106,7 +109,7 @@ int main (int argc, char **argv) {
  * @return codigo de erro
  */
 int print_argumentos_invalidos () {
-    printf("Argumentos inválidos.\nUso: ./multmatrix l c o|t [--verbose]\nOnde:\nl: número de linhas\nc: número de colunas\no|t: matriz M2 original (o) ou transposta (t)\n--verbose: escrever matrizes durante o processo (desativado por padrão)\n");
+    printf("Argumentos inválidos.\nUso: ./multmatrix l c o|t [--verbose]\nOnde:\nl: número de linhas da matriz M1 (colunas da matriz M2)\nc: número de colunas da matriz M1 (linhas da matriz M2)\no|t: matriz M2 original (o) ou transposta (t)\n--verbose: escrever matrizes durante o processo (desativado por padrão)\n");
     return 1;
 }
 
@@ -155,10 +158,10 @@ double **gera_matriz (int l, int c) {
 /**
  * Transpoe uma matriz para otimizaçao do uso de cache.
  * @param M matriz
- * @param l quantidade de linhas
- * @param c quantidade de colunas
+ * @param l quantidade de linhas da matriz de entrada, colunas da matriz de saida
+ * @param c quantidade de colunas da matriz de entrada, linhas da matriz de saida
  */
-double** transpoe_matriz (double **M, int l, int c) {
+double **transpoe_matriz (double **M, int l, int c) {
     int i, j;
     double **Mt;
 
@@ -180,27 +183,39 @@ double** transpoe_matriz (double **M, int l, int c) {
  * Multiplica as matrizes.
  * @param M1 matriz da esquerda
  * @param M2 matriz da direita
- * @param l quantidade de linhas
- * @param c quantidade de colunas
+ * @param lm1cm2 quantidade de linhas da matriz M1, ordem da matriz Mf
+ * @param cm1lm2 quantidade de colunas da matriz M1, linhas da matriz M2
  * @param otimizar otimizar a multiplicaçao por meio de transposiçao
  * @return matriz resultado
  */
-double **multiplica_matrizes (double **M1, double **M2, int l, int c, bool otimizar) {
+double **multiplica_matrizes (double **M1, double **M2, int lm1cm2, int cm1lm2, bool otimizar) {
     int i, j, k;
     double temp = 0, **Mf;
 
-    Mf = (double **) calloc((size_t) l, sizeof(double *));
-    for (i = 0; i < l; i++) {
-        Mf[i] = (double *) calloc((size_t) c, sizeof(double));
+    Mf = (double **) calloc((size_t) lm1cm2, sizeof(double *));
+    for (i = 0; i < lm1cm2; i++) {
+        Mf[i] = (double *) calloc((size_t) lm1cm2, sizeof(double));
     }
 
-    for (i = 0; i < l; i++) {
-        for (j = 0; j < c; j++) {
-            temp = 0;
-            for (k = 0; k < l; k++) {
-                temp += M1[i][k] * (otimizar ? M2[j][k] : M2[k][j]);
+    if (otimizar) {
+        for (i = 0; i < lm1cm2; i++) {
+            for (j = 0; j < lm1cm2; j++) {
+                temp = 0;
+                for (k = 0; k < cm1lm2; k++) {
+                    temp += M1[i][k] * M2[j][k];
+                }
+                Mf[i][j] = temp;
             }
-            Mf[i][j] = temp;
+        }
+    } else {
+        for (i = 0; i < lm1cm2; i++) {
+            for (j = 0; j < lm1cm2; j++) {
+                temp = 0;
+                for (k = 0; k < cm1lm2; k++) {
+                    temp += M1[i][k] * M2[k][j];
+                }
+                Mf[i][j] = temp;
+            }
         }
     }
 
